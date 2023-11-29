@@ -1,211 +1,327 @@
 ﻿using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Text;
+using System.Threading.Tasks;
 
-class Program
+namespace NQueensGA
 {
-    static int populationSize = 8; // Количество особей в популяции
-    static int[][] parent = new int[populationSize][]; // Массив родителей (особей)
-    static int[][] children = new int[populationSize][]; // Массив потомков (особей)
-    static int[] parentFitness = new int[populationSize]; // Массив значений приспособленности для родителей
-    static int[] childrenFitness = new int[populationSize]; // Массив значений приспособленности для потомков
-
-    static void Main(string[] args)
+    class Board
     {
-        InitialPopulation(); // Создание начальной популяции
-        int count = 0; // Счетчик поколений
-        double find = double.NaN; // Переменная для хранения индекса найденной особи
+        private int[] board;
+        private int fitness;
+        private int size;
 
-        while (true) // Начало эволюционного процесса
+        /// <summary>
+        /// Board Constructor
+        /// </summary>
+        /// <param name="board">Represents a board</param>
+        public Board(int[] board)
         {
-            count++; // Увеличение счетчика поколений
-            if (count % 1000 == 0) // Каждые 1000 поколений выводится информация о текущем состоянии
-            {
-                Console.WriteLine($"First {count} Subsets");
-            }
+            this.board = board;
+            fitness = calculateFitness();
+            size = board.Length;
+        }
 
-            for (int k = 0; k < populationSize / 2; k++) // Создание новых потомков путем скрещивания
-            {
-                Hybridization();
-            }
+        /// <summary>
+        /// calculateFitness - Determines the fitness of a board.
+        /// </summary>
+        /// <returns>Fitness of board</returns>
+        public int calculateFitness()
+        {
+            int fitness = 0;
+            bool result;
 
-            for (int k = 0; k < populationSize; k++) // Проверка на достижение оптимального решения
+            /* Check each queen on the board, and if it is not
+               attacking another queen, increase the fitness of
+               the board by one.
+            */
+            for (int i = 0; i < board.Length; i++)
             {
-                if (childrenFitness[k] == 28) // Если значение приспособленности равно 28 (оптимальное решение)
+                for (int j = 1; j < board.Length; j++)
                 {
-                    find = k; // Сохранение индекса найденной особи
-                    break;
-                }
-            }
+                    result = attacking(board[i], i, board[j], j);
 
-            if (!double.IsNaN(find)) // Если найдено оптимальное решение, процесс завершается
-            {
-                break;
-            }
-
-            Array.Copy(children, parent, populationSize); // Обновление родителей новыми потомками
-            Array.Copy(childrenFitness, parentFitness, populationSize); // Обновление значений приспособленности родителей
-
-            Array.Clear(children, 0, populationSize); // Очистка массива потомков
-            Array.Clear(childrenFitness, 0, populationSize); // Очистка массива значений приспособленности потомков
-        }
-
-        int[] res = children[(int)find]; // Найденная оптимальная особь
-        Console.WriteLine("Result:");
-        foreach (int item in res) // Вывод найденной оптимальной особи
-        {
-            Console.Write($"{item} ");
-        }
-
-        Console.WriteLine("\nFind results:");
-        int[,] resQueen = new int[8, 8]; // Доска для отображения решения задачи
-
-        for (int t = 0; t < 8; t++) // Заполнение доски на основе найденной оптимальной особи
-        {
-            resQueen[res[t], t] = 1;
-        }
-
-        for (int i = 0; i < 8; i++) // Вывод доски с решением задачи
-        {
-            for (int j = 0; j < 8; j++)
-            {
-                Console.Write(resQueen[i, j] + " ");
-            }
-            Console.WriteLine();
-        }
-    }
-
-    static void InitialIndividual() // Генерация начальной особи
-    {
-        int[] individual = new int[8]; // Массив для хранения генов особи
-        Random random = new Random(); // Генератор случайных чисел
-
-        for (int i = 0; i < 8; i++) // Заполнение генов случайными значениями
-        {
-            int a = random.Next(0, 8);
-            individual[i] = a;
-        }
-
-        int fitScore = UpdateFitnessScore(individual); // Вычисление значения приспособленности особи
-        parentFitness[Array.IndexOf(parentFitness, 0)] = fitScore; // Сохранение значения приспособленности
-        parent[Array.IndexOf(parent, null)] = individual; // Сохранение особи в массив родителей
-    }
-
-    static int UpdateFitnessScore(int[] individual) // Вычисление значения приспособленности особи
-    {
-        int value = 0;
-
-        for (int i = 0; i < 8; i++)
-        {
-            for (int j = i + 1; j < 8; j++)
-            {
-                if (individual[i] != individual[j])
-                {
-                    int x = j - i;
-                    int y = Math.Abs(individual[i] - individual[j]);
-
-                    if (x != y)
+                    if (result == false)
                     {
-                        value += 1;
+                        fitness++;
                     }
                 }
             }
+
+            return fitness;
         }
 
-        return value; // Возвращение значения приспособленности
-    }
-
-    static void InitialPopulation() // Создание начальной популяции
-    {
-        for (int i = 0; i < populationSize; i++)
+        /// <summary>
+        /// solved - Determines if a board is solved
+        /// </summary>
+        /// <returns></returns>
+        public bool solved()
         {
-            InitialIndividual(); // Генерация начальных особей
-        }
-    }
+            bool result;
 
-    static int Select() // Выбор особи для скрещивания
-    {
-        int totalScore = 0;
-
-        foreach (int fit in parentFitness) // Вычисление суммы значений приспособленности всех особей
-        {
-            totalScore += fit;
-        }
-
-        Random random = new Random(); // Генератор случайных чисел
-        int num = random.Next(0, totalScore); // Случайное число в диапазоне от 0 до суммы значений приспособленности
-        int frontScore = 0;
-
-        for (int i = 0; i < populationSize; i++) // Поиск выбранной особи на основе суммы значений приспособленности
-        {
-            frontScore += parentFitness[i];
-
-            if (frontScore >= num)
+            for (int i = 0; i < board.Length; i++)
             {
-                return i; // Возвращение индекса выбранной особи
+                for (int j = 1; j < board.Length; j++)
+                {
+                    result = attacking(board[i], i, board[j], j);
+
+                    if (result == true)
+                    {
+                        return false;
+                    }
+                }
+            }
+
+            return true;
+        }
+
+        /// <summary>
+        /// attacking - Checks if two queens are attacking
+        /// </summary>
+        /// <param name="queenA">First queen to check</param>
+        /// <param name="colA">Column of first queen</param>
+        /// <param name="queenB">Second queen to check</param>
+        /// <param name="colB">Column of second queen</param>
+        /// <returns></returns>
+        public Boolean attacking(int queenA, int colA, int queenB, int colB)
+        {
+            // If queen is checking itself
+            if (colA == colB)
+            {
+                return false;
+            }
+
+            // Check diagonal attacks
+            if (Math.Abs(queenB - queenA) == Math.Abs(colB - colA))
+            {
+                return true;
+            }
+            else if (queenA == queenB) // Check Row
+            {
+                return true;
+            }
+
+            return false;
+        }
+
+        /// <summary>
+        /// mutate - Performs a mutation on a single queen
+        /// </summary>
+        public void mutate()
+        {
+            Random r = new Random();
+
+            int randomPosition = r.Next(0, size);
+            int randomQueenValue = r.Next(1, size + 1);
+
+            board[randomPosition] = randomQueenValue;
+        }
+
+        /// <summary>
+        /// getBoard - Returns the board as an array
+        /// </summary>
+        /// <returns>board</returns>
+        public int[] getBoard()
+        {
+            return (int[])board.Clone();
+        }
+
+        /// <summary>
+        /// getFitness - Returns the fitness of board
+        /// </summary>
+        /// <returns>Fitness of board</returns>
+        public int getFitness()
+        {
+            return fitness;
+        }
+
+        /// <summary>
+        /// toString - Returns string representation of board
+        /// </summary>
+        /// <returns>String representing board</returns>
+        public String toString()
+        {
+            String str = String.Empty;
+
+            for (int i = 0; i < board.Length; i++)
+            {
+                str += board[i] + " ";
+            }
+
+            return str;
+        }
+
+        /// <summary>
+        /// printBoard - Prints a visual representation of board
+        /// </summary>
+        public void printBoard()
+        {
+            string str = String.Empty;
+
+            for (int i = 0; i < board.Length; i++)
+            {
+                for (int j = 0; j < board.Length; j++)
+                {
+                    if (board[j] == i + 1)
+                    {
+                        str += "Q ";
+                    }
+                    else
+                    {
+                        str += ". ";
+                    }
+                }
+
+                str += "\n\n";
+            }
+
+            Console.Out.Write(str);
+        }
+    }
+    class GenAlg
+    {
+        const int NUM_QUEENS = 8;
+        const int POP_SIZE = 500;
+        const int MUTATION = 10; // VALUE IS (X/100)
+        static Board[] POPULATION = new Board[POP_SIZE];
+
+        public static void Main()
+        {
+            Board solution = geneticAlg();
+
+            Console.Out.WriteLine(solution.toString() + "\n");
+            solution.printBoard();
+            Console.ReadLine();
+        }
+
+        /// <summary>
+        /// crossover - Performs a random single crossover two parents
+        /// </summary>
+        /// <param name="parentX">First Parent</param>
+        /// <param name="parentY">Second Parent</param>
+        /// <returns>Child as a result of a crossover</returns>
+        public static Board crossover(Board parentX, Board parentY)
+        {
+            Board child;
+            Random r = new Random();
+
+            int crossoverPoint = r.Next(1, NUM_QUEENS - 1);
+
+            // Obtain both parts of the array from the parents, then produce a single child
+            int[] firstHalf = parentX.getBoard().Take(crossoverPoint).ToArray();
+            int[] secondHalf = parentY.getBoard().Skip(crossoverPoint).Take(NUM_QUEENS - crossoverPoint).ToArray();
+            int[] childArray = firstHalf.Concat(secondHalf).ToArray();
+
+            child = new Board(childArray);
+
+            return child;
+
+        }
+
+        /// <summary>
+        /// createPopulation - Creates the initial population
+        /// </summary>
+        public static void createPopulation()
+        {
+            int[] initParent = new int[NUM_QUEENS];
+            Random r = new Random();
+
+            // Populating the population with random initial parents
+            for (int i = 0; i < POP_SIZE; i++)
+            {
+                for (int j = 0; j < initParent.Length; j++)
+                {
+                    initParent[j] = r.Next(1, NUM_QUEENS + 1);
+                }
+
+                POPULATION[i] = new Board((int[])initParent.Clone());
+            }
+
+        }
+
+        /// <summary>
+        /// chooseParent - Randomly chooses a weighted parent from the
+        ///                population, by level of fitness.
+        /// </summary>
+        /// <returns>Parent</returns>
+        public static Board chooseParent()
+        {
+            Random r = new Random();
+            int total = 0;
+
+            // Get current total fitness
+            for (int i = 0; i < POPULATION.Length; i++)
+            {
+                total += POPULATION[i].getFitness();
+            }
+
+            int random = r.Next(0, total);
+
+            // Choose random parent, higher fitness has higher chance
+            for (int i = 0; i < POPULATION.Length; i++)
+            {
+                if (random < POPULATION[i].getFitness())
+                {
+                    return POPULATION[i];
+                }
+
+                random = random - POPULATION[i].getFitness();
+            }
+
+            return null;
+        }
+
+        /// <summary>
+        /// geneticAlg - Performs the genetic algorithm 
+        /// </summary>
+        /// <returns>Child which contains a valid solution</returns>
+        public static Board geneticAlg()
+        {
+            Board child;
+            Random r = new Random();
+            Board[] tempPopulation = new Board[POP_SIZE];
+
+            int highestFitness = 0;
+            int generation = 0;
+
+            createPopulation();
+
+            while (true)
+            {
+                generation++;
+
+                // Begin creation of new generation
+                for (int i = 0; i < POP_SIZE; i++)
+                {
+                    // Choose two parents and create a child
+                    child = crossover(chooseParent(), chooseParent());
+
+                    // Check to see if child is a solution
+                    if (child.solved())
+                    {
+                        Console.Out.WriteLine("Fitness: " + child.getFitness() + " Generation: " + generation);
+                        return child;
+                    }
+
+                    // Mutation change
+                    if (MUTATION > r.Next(0, 100))
+                    {
+                        child.mutate();
+                    }
+
+                    // Check childs fitness
+                    if (child.getFitness() > highestFitness)
+                    {
+                        highestFitness = child.getFitness();
+                    }
+
+                    tempPopulation[i] = child;
+                }
+
+                POPULATION = tempPopulation;
+                Console.Out.WriteLine("Fitness: " + highestFitness + " Generation: " + generation);
             }
         }
-
-        return 0;
-    }
-
-    static int[] Mutation(int[] changeIndividual) // Мутация особи
-    {
-        Random random = new Random(); // Генератор случайных чисел
-        int pos = random.Next(0, 8); // Выбор случайной позиции для мутации
-        int change = random.Next(0, 8); // Новое случайное значение гена для мутации
-        changeIndividual[pos] = change; // Мутация гена
-
-        return changeIndividual; // Возвращение измененной особи
-    }
-
-    static void Hybridization() // Скрещивание особей
-    {
-        int first = Select(); // Выбор первой особи для скрещивания
-        int second = Select(); // Выбор второй особи для скрещивания
-        int[][] selectedParents = new int[2][] { parent[first], parent[second] }; // Массив выбранных для скрещивания особей
-        Random random = new Random(); // Генератор случайных чисел
-        int pos1 = random.Next(0, 7); // Выбор случайной позиции начала участка скрещивания
-        int pos2 = random.Next(0, 7); // Выбор случайной позиции конца участка скрещивания
-
-        if (pos1 > pos2) // Обеспечение правильного порядка позиций участка скрещивания
-        {
-            int temp = pos1;
-            pos1 = pos2;
-            pos2 = temp;
-        }
-
-        int rangeLength = pos2 - pos1;
-        if (rangeLength >= selectedParents[1].Length) // Проверка, не превышает ли длина участка скрещивания размер второй особи
-        {
-            pos2 = pos1 + selectedParents[1].Length - 1; // Если да, корректировка конечной позиции участка
-            rangeLength = pos2 - pos1;
-        }
-
-        int[] tmp = new int[rangeLength + 1]; // Временный массив для обмена генами между родителями
-        for (int i = pos1; i <= pos2; i++) // Обмен генами между выбранными особями в участке скрещивания
-        {
-            tmp[i - pos1] = selectedParents[0][i];
-            selectedParents[0][i] = selectedParents[1][i];
-            selectedParents[1][i] = tmp[i - pos1];
-        }
-
-        double may = random.NextDouble();
-        if (may > 0.5) // Вероятность мутации первой особи
-        {
-            selectedParents[0] = Mutation(selectedParents[0]); // Мутация первой особи
-        }
-
-        may = random.NextDouble();
-        if (may > 0.5) // Вероятность мутации второй особи
-        {
-            selectedParents[1] = Mutation(selectedParents[1]); // Мутация второй особи
-        }
-
-        int firstFit = UpdateFitnessScore(selectedParents[0]); // Вычисление приспособленности первой потомственной особи
-        int secondFit = UpdateFitnessScore(selectedParents[1]); // Вычисление приспособленности второй потомственной особи
-
-        children[Array.IndexOf(children, null)] = selectedParents[0]; // Добавление первой потомственной особи в массив потомков
-        children[Array.IndexOf(children, null)] = selectedParents[1]; // Добавление второй потомственной особи в массив потомков
-        childrenFitness[Array.IndexOf(childrenFitness, 0)] = firstFit; // Сохранение значения приспособленности первой потомственной особи
-        childrenFitness[Array.IndexOf(childrenFitness, 0)] = secondFit; // Сохранение значения приспособленности второй потомственной особи
     }
 }
