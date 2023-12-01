@@ -4,7 +4,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace NQueensGA
+namespace QueensGenetic
 {
     class Board
     {
@@ -13,7 +13,7 @@ namespace NQueensGA
         private int size;
 
         /// <summary>
-        /// Board Constructor
+        /// Конструктор досок.
         /// </summary>
         /// <param name="board">Represents a board</param>
         public Board(int[] board)
@@ -24,17 +24,17 @@ namespace NQueensGA
         }
 
         /// <summary>
-        /// calculateFitness - Determines the fitness of a board.
+        /// Определяет пригодность доски.
         /// </summary>
-        /// <returns>Fitness of board</returns>
+        /// <returns>Пригодность доски</returns>
         public int calculateFitness()
         {
             int fitness = 0;
             bool result;
 
-            /* Check each queen on the board, and if it is not
-               attacking another queen, increase the fitness of
-               the board by one.
+            /* Проверяем каждого ферзя на доске,
+             * и если он не атакует другого ферзя, 
+             * увеличиваем пригодность доски на единицу.
             */
             for (int i = 0; i < board.Length; i++)
             {
@@ -77,27 +77,27 @@ namespace NQueensGA
         }
 
         /// <summary>
-        /// attacking - Checks if two queens are attacking
+        /// Проверяет, атакуют ли две королевы
         /// </summary>
-        /// <param name="queenA">First queen to check</param>
-        /// <param name="colA">Column of first queen</param>
-        /// <param name="queenB">Second queen to check</param>
-        /// <param name="colB">Column of second queen</param>
+        /// <param name="queenA">Первая королева для проверки.</param>
+        /// <param name="colA">Столбец первой королевы</param>
+        /// <param name="queenB">Вторая королева для проверки.</param>
+        /// <param name="colB">Столбец второй королевы.</param>
         /// <returns></returns>
         public Boolean attacking(int queenA, int colA, int queenB, int colB)
         {
-            // If queen is checking itself
+            //Если королеы в одном столбце
             if (colA == colB)
             {
                 return false;
             }
 
-            // Check diagonal attacks
+            // Проверяем атаки диагоналей 
             if (Math.Abs(queenB - queenA) == Math.Abs(colB - colA))
             {
                 return true;
             }
-            else if (queenA == queenB) // Check Row
+            else if (queenA == queenB) // Проверяем строки
             {
                 return true;
             }
@@ -106,7 +106,7 @@ namespace NQueensGA
         }
 
         /// <summary>
-        /// mutate - Performs a mutation on a single queen
+        /// Выполняет мутацию на одной королеве.
         /// </summary>
         public void mutate()
         {
@@ -119,27 +119,27 @@ namespace NQueensGA
         }
 
         /// <summary>
-        /// getBoard - Returns the board as an array
+        /// Возвращает доску в виде массива
         /// </summary>
-        /// <returns>board</returns>
+        /// <returns>доска</returns>
         public int[] getBoard()
         {
             return (int[])board.Clone();
         }
 
         /// <summary>
-        /// getFitness - Returns the fitness of board
+        /// getFitness -Возвращает пригодность доски.
         /// </summary>
-        /// <returns>Fitness of board</returns>
+        /// <returns>Пригодность доски.</returns>
         public int getFitness()
         {
             return fitness;
         }
 
         /// <summary>
-        /// toString - Returns string representation of board
+        /// Возвращает строковое представление доски.
         /// </summary>
-        /// <returns>String representing board</returns>
+        /// <returns>Строковое представление доски.</returns>
         public String toString()
         {
             String str = String.Empty;
@@ -153,7 +153,7 @@ namespace NQueensGA
         }
 
         /// <summary>
-        /// printBoard - Prints a visual representation of board
+        /// Печать решения.
         /// </summary>
         public void printBoard()
         {
@@ -181,34 +181,39 @@ namespace NQueensGA
     }
     class GenAlg
     {
+        // Rоличество ферзей на шахматной доске.
         const int NUM_QUEENS = 8;
+        // Размер популяции.
         const int POP_SIZE = 500;
+        // Вероятность мутации (в данном случае, 10%).
         const int MUTATION = 10; // VALUE IS (X/100)
+        // Массив, содержащий особи (доски) в популяции.
         static Board[] POPULATION = new Board[POP_SIZE];
 
         public static void Main()
         {
+            //Вызываем метод geneticAlg() для выполнения генетического алгоритма.
             Board solution = geneticAlg();
-
+            //Выводит решение на экран.
             Console.Out.WriteLine(solution.toString() + "\n");
             solution.printBoard();
             Console.ReadLine();
         }
 
         /// <summary>
-        /// crossover - Performs a random single crossover two parents
+        /// Реализует одноточечное скрещивание двух родителей (parentX и parentY), чтобы создать потомка.
         /// </summary>
-        /// <param name="parentX">First Parent</param>
-        /// <param name="parentY">Second Parent</param>
-        /// <returns>Child as a result of a crossover</returns>
+        /// <param name="parentX">Первый родитель</param>
+        /// <param name="parentY">Второй родитель</param>
+        /// <returns>Ребенок в результате скрещивания.</returns>
         public static Board crossover(Board parentX, Board parentY)
         {
             Board child;
             Random r = new Random();
-
+            //Выбираем случайную точку пересечения и создаём потомка, комбинируя части родительских досок.
             int crossoverPoint = r.Next(1, NUM_QUEENS - 1);
 
-            // Obtain both parts of the array from the parents, then produce a single child
+            //Получаем обе части массива от родителей, затем создаём один дочерний элемент
             int[] firstHalf = parentX.getBoard().Take(crossoverPoint).ToArray();
             int[] secondHalf = parentY.getBoard().Skip(crossoverPoint).Take(NUM_QUEENS - crossoverPoint).ToArray();
             int[] childArray = firstHalf.Concat(secondHalf).ToArray();
@@ -220,14 +225,14 @@ namespace NQueensGA
         }
 
         /// <summary>
-        /// createPopulation - Creates the initial population
+        /// Создает начальную популяцию случайных досок размером POP_SIZE.
         /// </summary>
         public static void createPopulation()
         {
             int[] initParent = new int[NUM_QUEENS];
             Random r = new Random();
 
-            // Populating the population with random initial parents
+            // Заполнение популяции случайными первоначальными родителями.
             for (int i = 0; i < POP_SIZE; i++)
             {
                 for (int j = 0; j < initParent.Length; j++)
@@ -241,16 +246,15 @@ namespace NQueensGA
         }
 
         /// <summary>
-        /// chooseParent - Randomly chooses a weighted parent from the
-        ///                population, by level of fitness.
+        ///  Выбирает случайным образом родителя из совокупности по уровню пригодности.
         /// </summary>
-        /// <returns>Parent</returns>
+        /// <returns>Родитель</returns>
         public static Board chooseParent()
         {
             Random r = new Random();
             int total = 0;
 
-            // Get current total fitness
+            // Получаем текущую общую пригодность
             for (int i = 0; i < POPULATION.Length; i++)
             {
                 total += POPULATION[i].getFitness();
@@ -258,7 +262,7 @@ namespace NQueensGA
 
             int random = r.Next(0, total);
 
-            // Choose random parent, higher fitness has higher chance
+            // Выбираем случайного родителя с более высоким уровнем пригодности
             for (int i = 0; i < POPULATION.Length; i++)
             {
                 if (random < POPULATION[i].getFitness())
@@ -273,7 +277,7 @@ namespace NQueensGA
         }
 
         /// <summary>
-        /// geneticAlg - Performs the genetic algorithm 
+        /// Выполняет генетический алгоритм
         /// </summary>
         /// <returns>Child which contains a valid solution</returns>
         public static Board geneticAlg()
@@ -291,26 +295,26 @@ namespace NQueensGA
             {
                 generation++;
 
-                // Begin creation of new generation
+                // Создаём новые поколения особей, пока не будет найдено решение.
                 for (int i = 0; i < POP_SIZE; i++)
                 {
-                    // Choose two parents and create a child
+                    // CВыбираем двух родителей и создаём ребенка.
                     child = crossover(chooseParent(), chooseParent());
 
-                    // Check to see if child is a solution
+                    // Проверяем, является ли child решением.
                     if (child.solved())
                     {
                         Console.Out.WriteLine("Fitness: " + child.getFitness() + " Generation: " + generation);
                         return child;
                     }
 
-                    // Mutation change
+                    // Изменяем мутацию.
                     if (MUTATION > r.Next(0, 100))
                     {
                         child.mutate();
                     }
 
-                    // Check childs fitness
+                    // Проверяем пригодность ребенка 
                     if (child.getFitness() > highestFitness)
                     {
                         highestFitness = child.getFitness();
