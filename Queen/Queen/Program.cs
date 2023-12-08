@@ -74,8 +74,9 @@ namespace QueensGenetic
         public void Mutate()
         {
             Random r = new ();
-
+            // Выбираем рандомную особь
             int randomPosition = r.Next(0, Size);
+            // Выбираем рандомную позицию для королевы
             int randomQueenValue = r.Next(1, Size + 1);
             Board[randomPosition] = randomQueenValue;
         }
@@ -110,7 +111,7 @@ namespace QueensGenetic
         /// </summary>
         public void PrintBoard()
         {
-            string str = String.Empty;
+            string str = string.Empty;
 
             for (int i = 0; i < Board.Length; i++)
             {
@@ -167,8 +168,12 @@ namespace QueensGenetic
             int crossoverPoint = r.Next(1, NUM_QUEENS - 1);
 
             //Получаем обе части массива от родителей, затем создаём один дочерний элемент.
+            //LINQ: Take() извлекает определенное число элементов(crossoverPoint). 
+            //ToArray() берет входную последовательность с элементами типа T и возвращает массив элементов типа Т.
             int[] firstHalf = parentX.GetBoard().Take(crossoverPoint).ToArray();
+            //LINQ: Skip() пропускает определенное количество элементов.
             int[] secondHalf = parentY.GetBoard().Skip(crossoverPoint).Take(NUM_QUEENS - crossoverPoint).ToArray();
+            //LINQ: Concat() соединяет две входные последовательности и выдает одну выходную последовательность
             int[] childArray = firstHalf.Concat(secondHalf).ToArray();
 
             child = new Boards(childArray);
@@ -214,7 +219,6 @@ namespace QueensGenetic
                 }
 
                 POPULATION[i] = new Boards(initParent);
-                Console.WriteLine(POPULATION[i] + " ");
             }
         }
 
@@ -258,32 +262,32 @@ namespace QueensGenetic
         /// <returns>Child which contains a valid solution</returns>
         public static Boards GeneticAlg()
         {
-            //Дочерний элемент, содержащий допустимое решение
+            //Дочерний элемент, содержащий допустимое решение.
             Boards child;
             Random r = new();
-            // Временная популяция размерностью POP_SIZE
+            // Временная популяция размерностью POP_SIZE.
             Boards[] tempPopulation = new Boards[POP_SIZE];
-            // Лучшее значение функции пригодности
+            // Лучшее значение функции пригодности. Нужно для проверки пригодности потомка.
             int highestFitness = 0;
-            // Подсчёт поколений
+            // Подсчёт поколений.
             int generation = 0;
-            // Создаём начальную популяцию 
+            // Создаём начальную популяцию.
             CreatePopulation();
             while (true)
             {
-                //Счётчик поколений 
+                //Счётчик поколений .
                 generation++;
 
                 // Создаём новые поколения особей, пока не будет найдено решение.
                 for (int i = 0; i < POP_SIZE; i++)
                 {
-                    // CВыбираем двух родителей и создаём ребенка. Пока выбор рандомный 
+                    // CВыбираем двух родителей и создаём ребенка. Пока выбор рандомный.
                     child = Crossover(ChooseParent(), ChooseParent());
 
                     // Проверяем, является ли child решением.
                     if (child.Solved())
                     {
-                        Console.Out.WriteLine("Fitness: " + child.Fitness + " Generation: " + generation);
+                        Console.Out.WriteLine("Функция пригодности: " + child.Fitness + " Поколение: " + generation);
                         return child;
                     }
 
@@ -293,7 +297,7 @@ namespace QueensGenetic
                         child.Mutate();
                     }
 
-                    // Проверяем пригодность ребенка 
+                    // Проверяем пригодность ребенка.
                     if (child.Fitness > highestFitness)
                     {
                         highestFitness = child.Fitness ;
