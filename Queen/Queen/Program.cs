@@ -1,19 +1,30 @@
 ﻿
+using System.Diagnostics;
+using System.Xml.Linq;
+
 namespace QueensGenetic
 {
     class Boards
     {
-        // Расстановка
+        /// <summary>
+        /// Расстановка.
+        /// </summary>
         public int[] Board{ get; set; }
-        //Функция пригодности. Максимальное количество диагональных стролновений - 28. 
+
+        /// <summary>
+        /// Функция пригодности. Максимальное количество диагональных столкновений - 28.
+        /// </summary>
         public int Fitness { get; set; }
-        //Размер доски 
+
+        /// <summary>
+        /// Размер доски.
+        /// </summary>
         public int Size { get; set; }
 
         /// <summary>
         /// Конструктор досок.
         /// </summary>
-        /// <param name="Board">Represents a Board</param>
+        /// <param name="Board">Расстановка фигур на доске.</param>
         public Boards(int[] Board)
         {
             this.Board = Board;
@@ -24,47 +35,45 @@ namespace QueensGenetic
         /// <summary>
         /// Определяет пригодность доски.
         /// </summary>
-        /// <returns>Пригодность доски</returns>
+        /// <returns>Пригодность доски.</returns>
         public int CalculateFitness()
         {
-            int Fitness = 0;
+            var Fitness = 0;
             /* Проверяем каждого ферзя на доске,
              * и если он не атакует другого ферзя, 
              * увеличиваем пригодность доски на единицу.
             */
-            for (int i = 0; i < Board.Length; i++)
+            for (var i = 0; i < Board.Length; i++)
             {
-                for (int j = i+1; j < Board.Length; j++)
+                for (var j = i+1; j < Board.Length; j++)
                 {
-                    // Проверяем атаки диагоналей и строк. Если никто никого не бьёт, то функция пригодности++
+                    // Проверяем атаки диагоналей и строк. Если никто никого не бьёт, то увеличиваем функцию пригодности.
                     if ((Math.Abs(Board[i]- Board[j]) != Math.Abs(j - i)) && (Board[i] != Board[j])) 
                     {
                         Fitness++;
                     }
-
                 }
             }
             return Fitness;
         }
 
         /// <summary>
-        /// Определяет , есляется ли доска решением 
+        /// Определяет , является ли доска решением.
         /// </summary>
-        /// <returns></returns>
+        /// <returns>True - если решение, false - если не является решением (есть столкновения).</returns>
         public bool Solved()
         {
-            for (int i = 0; i < Board.Length; i++)
+            for (var i = 0; i < Board.Length; i++)
             {
-                for (int j = i+1; j < Board.Length; j++)
+                for (var j = i+1; j < Board.Length; j++)
                 {
-                    // Проверяем атаки диагоналей и строк. Если драка, то функция решение не годное
+                    // Проверяем атаки диагоналей и строк. Если столкновения, то решение не подходит.
                     if ((Math.Abs(Board[i] - Board[j]) == Math.Abs(j - i)) || (Board[i] == Board[j]))
                     {
                         return false;
                     }
                 }
             }
-
             return true;
         }
 
@@ -74,17 +83,17 @@ namespace QueensGenetic
         public void Mutate()
         {
             Random r = new ();
-            // Выбираем рандомную особь
+            // Выбираем любую позицию (столбец).
             int randomPosition = r.Next(0, Size);
-            // Выбираем рандомную позицию для королевы
+            // Выбираем любую королеву (расположение на строке).
             int randomQueenValue = r.Next(1, Size + 1);
             Board[randomPosition] = randomQueenValue;
         }
 
         /// <summary>
-        /// Возвращает доску в виде массива
+        /// Возвращает доску в виде массива.
         /// </summary>
-        /// <returns>доска</returns>
+        /// <returns>Копия расстановки доски в виде массива.</returns>
         public int[] GetBoard()
         {
             return (int[])Board.Clone();
@@ -112,7 +121,6 @@ namespace QueensGenetic
         public void PrintBoard()
         {
             string str = string.Empty;
-
             for (int i = 0; i < Board.Length; i++)
             {
                 for (int j = 0; j < Board.Length; j++)
@@ -126,30 +134,59 @@ namespace QueensGenetic
                         str += ". ";
                     }
                 }
-
                 str += "\n\n";
             }
-
-            Console.Out.Write(str);
+            Console.Write(str);
         }
     }
     class GenAlg
     {
-        // Rоличество ферзей на шахматной доске.
-        const int NUM_QUEENS = 8;
-        // Размер популяции.
-        const int POP_SIZE = 500;
-        // Вероятность мутации (в данном случае, 10%).
-        const int MUTATION = 10; 
-        // Массив, содержащий особи (доски) в популяции.
-        static Boards[] POPULATION = new Boards[POP_SIZE];
+        /// <summary>
+        /// Количество ферзей на шахматной доске.
+        /// </summary>
+        static int NumQueens;
+
+        /// <summary>
+        /// Размер популяции.
+        /// </summary>
+        const int popSize = 500;
+
+        /// <summary>
+        /// Вероятность мутации (в данном случае, 10%).
+        /// </summary>
+        const int mutation = 10;
+
+        /// <summary>
+        /// Массив, содержащий особи (доски) в популяции.
+        /// </summary>
+        static Boards[] population = new Boards[popSize];
 
         public static void Main()
         {
+            //Пользовательский ввод.
+            while (true)
+            {
+                Console.WriteLine("Введите число королев: ");
+                if (int.TryParse(Console.ReadLine(),out NumQueens) && (NumQueens>0))
+                { 
+                   Console.WriteLine("Запуск алгоритма"); 
+                    break;
+                }
+                else
+                {
+                    Console.WriteLine("Ошибка. Некорректное значение");
+                }
+            }
+            //Время работы программы.
+            Stopwatch stopWatch = new();
+            stopWatch.Start();
             //Вызываем метод geneticAlg() для выполнения генетического алгоритма.
             Boards solution = GeneticAlg();
+            stopWatch.Stop();
+            TimeSpan ts = stopWatch.Elapsed;
+            Console.WriteLine($"Время работы алгоритма : {ts}");
             //Выводит решение на экран.
-            Console.Out.WriteLine(solution.ToString() + "\n");
+            Console.WriteLine(solution.ToString() + "\n");
             solution.PrintBoard();
             Console.ReadLine();
         }
@@ -157,68 +194,62 @@ namespace QueensGenetic
         /// <summary>
         /// Реализует одноточечное скрещивание двух родителей (parentX и parentY), чтобы создать потомка.
         /// </summary>
-        /// <param name="parentX">Первый родитель</param>
-        /// <param name="parentY">Второй родитель</param>
+        /// <param name="parentX">Первый родитель.</param>
+        /// <param name="parentY">Второй родитель.</param>
         /// <returns>Ребенок в результате скрещивания.</returns>
         public static Boards Crossover(Boards parentX, Boards parentY)
         {
             Boards child;
             Random r = new();
             //Выбираем случайную точку пересечения и создаём потомка, комбинируя части родительских досок.
-            int crossoverPoint = r.Next(1, NUM_QUEENS - 1);
-
+            int crossoverPoint = r.Next(1, NumQueens - 1);
             //Получаем обе части массива от родителей, затем создаём один дочерний элемент.
             //LINQ: Take() извлекает определенное число элементов(crossoverPoint). 
             //ToArray() берет входную последовательность с элементами типа T и возвращает массив элементов типа Т.
             int[] firstHalf = parentX.GetBoard().Take(crossoverPoint).ToArray();
             //LINQ: Skip() пропускает определенное количество элементов.
-            int[] secondHalf = parentY.GetBoard().Skip(crossoverPoint).Take(NUM_QUEENS - crossoverPoint).ToArray();
+            int[] secondHalf = parentY.GetBoard().Skip(crossoverPoint).Take(NumQueens - crossoverPoint).ToArray();
             //LINQ: Concat() соединяет две входные последовательности и выдает одну выходную последовательность
             int[] childArray = firstHalf.Concat(secondHalf).ToArray();
-
             child = new Boards(childArray);
-
             return child;
-
         }
 
         /// <summary>
-        /// Создает начальную популяцию случайных досок размером POP_SIZE. 
-        /// Случайная популяция состоит из растановки ферзей, которые не бьют друг друга по стобцам и строкам.
+        /// Создает начальную популяцию случайных досок размером popSize. 
+        /// Случайная популяция состоит из расстановки ферзей, которые не бьют друг друга по столбцам и строкам.
         /// </summary>
         public static void CreatePopulation()
         {
-            int[] initParent = new int[NUM_QUEENS];
+            int[] initParent = new int[NumQueens];
             Random r = new();
-
             // Заполнение популяции случайными первоначальными родителями.
-            for (int i = 0; i < POP_SIZE; i++)
+            for (var i = 0; i < popSize; i++)
             {
-                for (int j = 0; j < initParent.Length; j++)
+                for (var j = 0; j < initParent.Length; j++)
                 {
-                    initParent[j] = r.Next(1, NUM_QUEENS + 1);
+                    initParent[j] = r.Next(1, NumQueens + 1);
                     while (true)
                     {
-                        initParent[j] = r.Next(1, NUM_QUEENS + 1);
+                        initParent[j] = r.Next(1, NumQueens + 1);
                         int k ;
-                        // Проверка уникальности(без драк для строк ) (столбцы 100% мирные)
+                        // Проверка уникальности(без столкновений для строк ).
                         for(k = 0; k <= j; k++)
                         {
                             if (initParent[k]== initParent[j])
                             {
-                                //Если столкновение выходим из цикла
+                                //Если столкновение => выходим из цикла.
                                 break;
                             }
                         }
-                        // Если столкновений нет => выходим из цикла 
+                        // Если столкновений нет => выходим из цикла.
                         if (k == j)
                         {
                             break;
                         }
                     }
                 }
-
-                POPULATION[i] = new Boards(initParent);
+                population[i] = new Boards(initParent);
             }
         }
 
@@ -229,85 +260,71 @@ namespace QueensGenetic
         public static Boards ChooseParent()
         {
             Random r = new();
-            // Общая пригодность
-            int total = 0;
-
-            // Получаем текущую общую пригодность
-            for (int i = 0; i < POPULATION.Length; i++)
+            // Общая пригодность.
+            var total = 0;
+            // Получаем текущую общую пригодность.
+            for (var i = 0; i < population.Length; i++)
             {
-                total += POPULATION[i].Fitness;
+                total += population[i].Fitness;
             }
-
             int random = r.Next(0, total);
-
-            // Выбираем случайного родителя с более высоким уровнем пригодности
-            for (int i = 0; i < POPULATION.Length; i++)
+            // Выбираем случайного родителя с более высоким уровнем пригодности.
+            for (var i = 0; i < population.Length; i++)
             {
-                if (random < POPULATION[i].Fitness)
+                if (random < population[i].Fitness)
                 {
-                    return POPULATION[i];
+                    return population[i];
                 }
-
-                random -= POPULATION[i].Fitness;
+                random -= population[i].Fitness;
             }
-
-#pragma warning disable CS8603 // Возможно, возврат ссылки, допускающей значение NULL.
             return null;
-#pragma warning restore CS8603 // Возможно, возврат ссылки, допускающей значение NULL.
         }
 
         /// <summary>
-        /// Выполняет генетический алгоритм
+        /// Выполняет генетический алгоритм.
         /// </summary>
-        /// <returns>Child which contains a valid solution</returns>
+        /// <returns>Дочерний элемент, содержащий допустимое решение.</returns>
         public static Boards GeneticAlg()
         {
             //Дочерний элемент, содержащий допустимое решение.
             Boards child;
             Random r = new();
-            // Временная популяция размерностью POP_SIZE.
-            Boards[] tempPopulation = new Boards[POP_SIZE];
+            // Временная популяция размерностью popSize.
+            Boards[] tempPopulation = new Boards[popSize];
             // Лучшее значение функции пригодности. Нужно для проверки пригодности потомка.
-            int highestFitness = 0;
+            var highestFitness = 0;
             // Подсчёт поколений.
-            int generation = 0;
+            var generation = 0;
             // Создаём начальную популяцию.
             CreatePopulation();
             while (true)
             {
                 //Счётчик поколений .
                 generation++;
-
                 // Создаём новые поколения особей, пока не будет найдено решение.
-                for (int i = 0; i < POP_SIZE; i++)
+                for (var i = 0; i < popSize; i++)
                 {
-                    // CВыбираем двух родителей и создаём ребенка. Пока выбор рандомный.
+                    // CВыбираем двух родителей и создаём ребенка. Пока выбор любой.
                     child = Crossover(ChooseParent(), ChooseParent());
-
                     // Проверяем, является ли child решением.
                     if (child.Solved())
                     {
-                        Console.Out.WriteLine("Функция пригодности: " + child.Fitness + " Поколение: " + generation);
+                        Console.WriteLine("Функция пригодности: " + child.Fitness + " Поколение: " + generation);
                         return child;
                     }
-
                     // Изменяем мутацию.
-                    if (MUTATION > r.Next(0, 100))
+                    if (mutation > r.Next(0, 100))
                     {
                         child.Mutate();
                     }
-
                     // Проверяем пригодность ребенка.
                     if (child.Fitness > highestFitness)
                     {
                         highestFitness = child.Fitness ;
                     }
-
                     tempPopulation[i] = child;
                 }
-
-                POPULATION = tempPopulation;
-                Console.Out.WriteLine("Fitness: " + highestFitness + " Generation: " + generation);
+                population = tempPopulation;
             }
         }
     }

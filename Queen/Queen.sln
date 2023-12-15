@@ -3,7 +3,12 @@ Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio Version 17
 VisualStudioVersion = 17.3.32929.385
 MinimumVisualStudioVersion = 10.0.40219.1
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Queen", "Queen\Queen.csproj", "{1FD8B814-EC8A-4B1B-9C14-105639D086CB}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Queen", "Queen\Queen.csproj", "{1FD8B814-EC8A-4B1B-9C14-105639D086CB}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution Items", "{99263BA2-3E2B-4AD6-ADD2-F0C8D8B5C775}"
+	ProjectSection(SolutionItems) = preProject
+		.editorconfig = .editorconfig
+	EndProjectSection
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
